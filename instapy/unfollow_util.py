@@ -208,7 +208,7 @@ def unfollow(browser,
              logger,
              logfolder):
     """ Unfollows the given amount of users"""
-
+    dont_include=[]#todo blacklist handle
     if (customList is not None and
             isinstance(customList, (tuple, list)) and
             len(customList) == 3 and
@@ -448,6 +448,7 @@ def unfollow(browser,
                                         pass
 
                     try:
+                        beginTs = int(time.time())
                         unfollow_state, msg = unfollow_user(browser,
                                                             "profile",
                                                             username,
@@ -457,9 +458,16 @@ def unfollow(browser,
                                                             relationship_data,
                                                             logger,
                                                             logfolder)
+                        if int(time.time())-beginTs>25*60:#todo 检查运行时间，过长跳出该循环
+                            logger.error(
+                                "Unfollow waste too much time !end this loop")
+                            return 0
                     except BaseException as e:
                         logger.error(
                             "Unfollow loop error:  {}\n".format(str(e)))
+                        logger.error(
+                            "Unfollow BaseException !end this loop")
+                        return 0
 
                     post_unfollow_actions(browser, person, logger)
 
@@ -478,10 +486,12 @@ def unfollow(browser,
                         # break the loop in extreme conditions to prevent
                         # misbehaviours
                         logger.warning(
-                            "There is a serious issue: '{}'!\t~leaving "
+                            "There is a serious issue: '{}'!\t~but not leaving "
                             "Unfollow-Users activity".format(
                                 msg))
-                        break
+                        logger.warning("instead we sleep 49min to continue!!!")#todo don't break ,but sleep
+                        time.sleep(49*60)
+                        #break
 
                 else:
                     # if the user in dont include (should not be) we shall
@@ -694,7 +704,7 @@ def follow_user(browser, track, login, user_name, button, blacklist, logger,
                                                                None,
                                                                logger,
                                                                logfolder)
-        if following_status in ["Follow", "Follow Back"]:
+        if following_status in["Follow"]:# ["Follow", "Follow Back"]:#todo don't follow already follow me
             click_visibly(browser, follow_button)  # click to follow
             follow_state, msg = verify_action(browser, "follow", track, login,
                                               user_name, None, logger,
@@ -702,12 +712,15 @@ def follow_user(browser, track, login, user_name, button, blacklist, logger,
             if follow_state is not True:
                 return False, msg
 
-        elif following_status in ["Following", "Requested"]:
+        elif following_status in ["Following", "Requested", "Follow Back"]:
             if following_status == "Following":
                 logger.info("--> Already following '{}'!\n".format(user_name))
 
             elif following_status == "Requested":
                 logger.info("--> Already requested '{}' to follow!\n".format(
+                    user_name))
+            elif following_status == "Follow Back":
+                logger.info("--> Already follow me '{}' to follow!\n".format(
                     user_name))
 
             sleep(1)
@@ -1560,6 +1573,7 @@ def verify_action(browser, action, track, username, person, person_id, logger,
                                    "from {0}ing\n"
                                    .format(action, username))
                     sleep(210)
+                    sleep(1*24*60*60)#sleep 1 day
                     return False, "temporary block"
 
         if retry_count == 2:
