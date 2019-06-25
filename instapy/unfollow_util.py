@@ -1520,6 +1520,7 @@ def verify_action(browser, action, track, username, person, person_id, logger,
         button_change = False
 
         if action == "follow":
+            time.sleep(67)#todo follow sleep
             post_action_text_correct = ["Following", "Requested"]
             post_action_text_fail = ["Follow", "Follow Back", "Unblock"]
 
@@ -1573,7 +1574,8 @@ def verify_action(browser, action, track, username, person, person_id, logger,
                                    "from {0}ing\n"
                                    .format(action, username))
                     sleep(210)
-                    sleep(1*24*60*60)#sleep 1 day
+                    time.sleep(1*4*60*60)#todo sleep 1 day
+                    logger.warning("sleep 4 hour over")
                     return False, "temporary block"
 
         if retry_count == 2:
